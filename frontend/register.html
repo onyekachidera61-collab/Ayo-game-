@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register – 9jaWin Ayo</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>🎮 9jaWin</h1>
+      <p>Create your account and start playing</p>
+    </div>
+
+    <form id="register-form">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" id="username" class="form-input" placeholder="e.g. AyoMaster99" required
+               minlength="3" maxlength="30" pattern="[a-zA-Z0-9]+">
+        <div class="form-error hidden" id="username-error"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Display Name</label>
+        <input type="text" id="display_name" class="form-input" placeholder="Your display name (optional)" maxlength="100">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="Min 8 characters" required
+               minlength="8" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" id="confirm_password" class="form-input" placeholder="Re-enter password" required autocomplete="new-password">
+        <div class="form-error hidden" id="confirm-error"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg mt-2" id="register-btn">
+        Create Account
+      </button>
+
+      <div class="divider"></div>
+      <p class="text-center text-sm text-muted">
+        Already have an account? <a href="/login.html">Sign in</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  if (AyoAPI.getToken()) window.location.href = '/lobby.html';
+
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const password = document.getElementById('password').value;
+    const confirm  = document.getElementById('confirm_password').value;
+    const confirmErr = document.getElementById('confirm-error');
+
+    if (password !== confirm) {
+      confirmErr.textContent = 'Passwords do not match.';
+      confirmErr.classList.remove('hidden');
+      return;
+    }
+    confirmErr.classList.add('hidden');
+
+    const btn = document.getElementById('register-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
+
+    try {
+      const res = await AyoAPI.register({
+        username:     document.getElementById('username').value,
+        display_name: document.getElementById('display_name').value || undefined,
+        email:        document.getElementById('email').value,
+        password,
+      });
+
+      if (res.success) {
+        AyoAPI.setToken(res.data.accessToken);
+        AyoAPI.setRefreshToken(res.data.refreshToken);
+        AyoAPI.setUser(res.data.user);
+        Toast.success('Account created! Welcome to 9jaWin!');
+        setTimeout(() => window.location.href = '/lobby.html', 800);
+      } else {
+        const msg = res.message || (res.errors && res.errors[0]?.msg) || 'Registration failed.';
+        Toast.error(msg);
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      }
+    } catch (err) {
+      Toast.error('Network error. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallet – 9jaWin Ayo</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="/">🎮 9jaWin</a>
+  <button class="navbar-menu-toggle">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="/lobby.html">Lobby</a></li>
+    <li><a href="/wallet.html" class="active">💰 Wallet</a></li>
+    <li><a href="/profile.html">👤 Profile</a></li>
+    <li><a href="#" id="logout-btn" class="btn btn-ghost btn-sm">Logout</a></li>
+  </ul>
+</nav>
+
+<main class="container" style="padding:2rem 1rem;max-width:800px">
+  <h2 style="margin-bottom:1.5rem">💰 My Wallet</h2>
+
+  <!-- Balance Card -->
+  <div class="balance-card mb-2">
+    <p class="text-muted text-sm">Available Balance</p>
+    <div class="balance-amount" id="wallet-balance">₦0.00</div>
+    <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem">
+      <button class="btn btn-primary" onclick="openModal('deposit-modal')">➕ Deposit</button>
+      <button class="btn btn-outline" onclick="openModal('withdraw-modal')">💸 Withdraw</button>
+    </div>
+  </div>
+
+  <!-- Transaction History -->
+  <div class="card">
+    <h3 style="margin-bottom:1rem">Transaction History</h3>
+    <div id="tx-list">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</main>
+
+<!-- Deposit Modal -->
+<div id="deposit-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:100%;max-width:400px">
+    <h3 style="margin-bottom:1.5rem">Deposit Funds</h3>
+    <p class="text-muted text-sm mb-2">In production this integrates with Paystack/Flutterwave. For demo, use any reference.</p>
+    <form id="deposit-form">
+      <div class="form-group">
+        <label class="form-label">Amount (₦)</label>
+        <input type="number" id="deposit-amount" class="form-input" min="100" step="100" placeholder="e.g. 1000" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Reference</label>
+        <input type="text" id="deposit-ref" class="form-input" placeholder="e.g. PAY-12345" required>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1.5rem">
+        <button type="submit" class="btn btn-primary" style="flex:1">Deposit</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('deposit-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div id="withdraw-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:100%;max-width:400px">
+    <h3 style="margin-bottom:1.5rem">Withdraw Funds</h3>
+    <form id="withdraw-form">
+      <div class="form-group">
+        <label class="form-label">Amount (₦)</label>
+        <input type="number" id="withdraw-amount" class="form-input" min="500" step="100" placeholder="Min ₦500" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Account Number</label>
+        <input type="text" id="withdraw-account" class="form-input" placeholder="0123456789" maxlength="10" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bank Code</label>
+        <select id="withdraw-bank" class="form-select" required>
+          <option value="">Select Bank</option>
+          <option value="044">Access Bank</option>
+          <option value="023">Citibank</option>
+          <option value="063">Diamond Bank</option>
+          <option value="050">EcoBank</option>
+          <option value="011">First Bank</option>
+          <option value="214">First City Monument Bank</option>
+          <option value="070">Fidelity Bank</option>
+          <option value="058">Guaranty Trust Bank</option>
+          <option value="030">Heritage Bank</option>
+          <option value="301">Jaiz Bank</option>
+          <option value="082">Keystone Bank</option>
+          <option value="101">Providus Bank</option>
+          <option value="076">Polaris Bank</option>
+          <option value="221">Stanbic IBTC</option>
+          <option value="068">Standard Chartered</option>
+          <option value="232">Sterling Bank</option>
+          <option value="100">Suntrust Bank</option>
+          <option value="032">Union Bank</option>
+          <option value="033">United Bank for Africa</option>
+          <option value="215">Unity Bank</option>
+          <option value="035">Wema Bank</option>
+          <option value="057">Zenith Bank</option>
+          <option value="999">OPay</option>
+          <option value="998">PalmPay</option>
+          <option value="997">Kuda</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1.5rem">
+        <button type="submit" class="btn btn-primary" style="flex:1">Request Withdrawal</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('withdraw-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  requireAuth();
+
+  const txTypeLabels = {
+    deposit: 'Deposit',
+    withdrawal: 'Withdrawal',
+    match_entry: 'Match Entry Fee',
+    match_reward: 'Match Winnings',
+    tournament_entry: 'Tournament Entry',
+    tournament_reward: 'Tournament Prize',
+    refund: 'Refund',
+  };
+
+  async function loadWallet() {
+    const res = await AyoAPI.getWallet();
+    if (res.success) {
+      document.getElementById('wallet-balance').textContent = formatCurrency(res.data.balance);
+    }
+  }
+
+  async function loadTransactions() {
+    const el = document.getElementById('tx-list');
+    el.innerHTML = '<div class="spinner"></div>';
+    const res = await AyoAPI.getTransactions();
+    if (!res.success) { el.innerHTML = '<p class="text-muted">Failed to load transactions.</p>'; return; }
+
+    if (!res.data.transactions.length) {
+      el.innerHTML = '<p class="text-muted text-center p-3">No transactions yet.</p>';
+      return;
+    }
+
+    el.innerHTML = res.data.transactions.map(tx => {
+      const isCredit = ['deposit','match_reward','tournament_reward','refund'].includes(tx.type);
+      return `
+        <div class="tx-row">
+          <div>
+            <div style="font-weight:600">${txTypeLabels[tx.type] || tx.type}</div>
+            <div class="text-muted text-sm">${tx.description || ''} · ${formatDate(tx.created_at)}</div>
+          </div>
+          <div>
+            <div class="tx-amount ${isCredit ? 'credit' : 'debit'}">
+              ${isCredit ? '+' : '-'}${formatCurrency(tx.amount)}
+            </div>
+            <div class="text-muted text-sm text-center">
+              <span class="badge badge-${tx.status === 'completed' ? 'online' : 'offline'}">${tx.status}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  document.getElementById('deposit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await AyoAPI.deposit({
+      amount:    parseFloat(document.getElementById('deposit-amount').value),
+      reference: document.getElementById('deposit-ref').value,
+    });
+    if (res.success) {
+      Toast.success('Deposit successful!');
+      closeModal('deposit-modal');
+      loadWallet();
+      loadTransactions();
+    } else {
+      Toast.error(res.message || 'Deposit failed.');
+    }
+  });
+
+  document.getElementById('withdraw-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await AyoAPI.withdraw({
+      amount:         parseFloat(document.getElementById('withdraw-amount').value),
+      account_number: document.getElementById('withdraw-account').value,
+      bank_code:      document.getElementById('withdraw-bank').value,
+    });
+    if (res.success) {
+      Toast.success('Withdrawal request submitted! Pending admin approval.');
+      closeModal('withdraw-modal');
+      loadWallet();
+      loadTransactions();
+    } else {
+      Toast.error(res.message || 'Withdrawal failed.');
+    }
+  });
+
+  function openModal(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('hidden');
+    el.style.display = 'flex';
+  }
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  }
+  ['deposit-modal','withdraw-modal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      if (e.target.id === id) closeModal(id);
+    });
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async e => {
+    e.preventDefault();
+    await AyoAPI.logout();
+    window.location.href = '/login.html';
+  });
+
+  loadWallet();
+  loadTransactions();
+</script>
+</body>
+</html>

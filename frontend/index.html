@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>9jaWin – Multiplayer Ayo Game</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <meta name="description" content="Play Ayo Olopon online – the authentic Nigerian Mancala game. Compete, earn, and climb the leaderboard on 9jaWin.">
+</head>
+<body>
+
+<!-- ── Navbar ──────────────────────────────────────────────────── -->
+<nav class="navbar">
+  <a class="navbar-brand" href="/">🎮 9jaWin <span>Ayo</span></a>
+  <button class="navbar-menu-toggle" aria-label="Menu">☰</button>
+  <ul class="navbar-nav" id="main-nav">
+    <li><a href="/lobby.html">Lobby</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+    <li><a href="/tournaments.html">Tournaments</a></li>
+    <li><a href="/wallet.html">Wallet</a></li>
+    <li id="nav-auth">
+      <a href="/login.html" class="btn btn-outline btn-sm">Login</a>
+    </li>
+    <li id="nav-user" class="hidden">
+      <a href="/profile.html" class="btn btn-ghost btn-sm">👤 <span id="nav-username"></span></a>
+    </li>
+  </ul>
+</nav>
+
+<!-- ── Hero ────────────────────────────────────────────────────── -->
+<main>
+  <section class="hero">
+    <div>
+      <h1 class="hero-title">
+        <span class="text-accent">9jaWin</span><br>
+        Ayo Olopon
+      </h1>
+      <p class="hero-sub mt-2">
+        The authentic Nigerian strategy game. Challenge players across Nigeria,
+        earn real money, and prove your mastery of Ayo Olopon.
+      </p>
+      <div class="hero-actions mt-3">
+        <a href="/register.html" class="btn btn-primary btn-lg">Play Now – It's Free</a>
+        <a href="#how-to-play" class="btn btn-ghost btn-lg">How to Play</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section style="padding:4rem 1rem;background:var(--bg-secondary)">
+    <div class="container">
+      <h2 class="text-center mb-2">Why Play on 9jaWin?</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1.5rem;margin-top:2rem">
+        <div class="card text-center">
+          <div style="font-size:3rem;margin-bottom:1rem">🎮</div>
+          <h3>Authentic Ayo Rules</h3>
+          <p class="text-muted mt-1">Real Nigerian Ayo Olopon rules – anti-clockwise sowing, capture mechanics, and grand-slam prevention.</p>
+        </div>
+        <div class="card text-center">
+          <div style="font-size:3rem;margin-bottom:1rem">💰</div>
+          <h3>Win Real Money</h3>
+          <p class="text-muted mt-1">Money matches and tournaments with real prize pools. Winner takes 80% of the pot.</p>
+        </div>
+        <div class="card text-center">
+          <div style="font-size:3rem;margin-bottom:1rem">⚡</div>
+          <h3>Real-Time Multiplayer</h3>
+          <p class="text-muted mt-1">Live games powered by Socket.IO. No lag, instant moves, 30-second turn timers.</p>
+        </div>
+        <div class="card text-center">
+          <div style="font-size:3rem;margin-bottom:1rem">🏆</div>
+          <h3>Tournaments</h3>
+          <p class="text-muted mt-1">Join daily, weekly, and special tournaments. Compete for huge prize pools.</p>
+        </div>
+        <div class="card text-center">
+          <div style="font-size:3rem;margin-bottom:1rem">📱</div>
+          <h3>Mobile Friendly</h3>
+          <p class="text-muted mt-1">Play on any device. Optimized for mobile with a beautiful touch interface.</p>
+        </div>
+        <div class="card text-center">
+          <div style="font-size:3rem;margin-bottom:1rem">🔒</div>
+          <h3>Secure & Fair</h3>
+          <p class="text-muted mt-1">All moves validated server-side. Anti-cheat system prevents manipulation.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How to Play -->
+  <section id="how-to-play" style="padding:4rem 1rem">
+    <div class="container" style="max-width:800px">
+      <h2 class="text-center mb-2">How to Play Ayo Olopon</h2>
+      <div class="card mt-3">
+        <ol style="list-style:none;counter-reset:steps;display:flex;flex-direction:column;gap:1.25rem">
+          <li style="counter-increment:steps;display:flex;gap:1rem">
+            <span style="background:var(--accent);color:#000;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0">1</span>
+            <div><strong>The Board:</strong> 12 pits (6 per player), each starting with 4 seeds. You control the 6 pits on your side.</div>
+          </li>
+          <li style="counter-increment:steps;display:flex;gap:1rem">
+            <span style="background:var(--accent);color:#000;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0">2</span>
+            <div><strong>Your Turn:</strong> Pick any pit on your side with seeds. Pick them up and sow them anti-clockwise, one seed per pit.</div>
+          </li>
+          <li style="counter-increment:steps;display:flex;gap:1rem">
+            <span style="background:var(--accent);color:#000;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0">3</span>
+            <div><strong>Capture:</strong> If your last seed lands on the opponent's side and that pit now has 2 or 3 seeds, you capture them! Continue capturing consecutive pits with 2 or 3 seeds.</div>
+          </li>
+          <li style="counter-increment:steps;display:flex;gap:1rem">
+            <span style="background:var(--accent);color:#000;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;flex-shrink:0">4</span>
+            <div><strong>Win:</strong> Capture 25 or more seeds (out of 48 total). Most seeds when the game ends wins!</div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ── Footer ───────────────────────────────────────────────────── -->
+<footer style="background:var(--bg-secondary);padding:2rem 1rem;text-align:center;color:var(--text-muted);font-size:0.85rem;border-top:1px solid var(--border)">
+  <p>© 2024 9jaWin – Authentic Nigerian Gaming Platform</p>
+  <p class="mt-1">Play responsibly. For 18+ only. <a href="#">Terms</a> · <a href="#">Privacy</a></p>
+</footer>
+
+<script src="/js/api.js"></script>
+<script>
+  // Show user in nav if logged in
+  const user = AyoAPI.getUser();
+  if (user) {
+    document.getElementById('nav-auth').classList.add('hidden');
+    document.getElementById('nav-user').classList.remove('hidden');
+    document.getElementById('nav-username').textContent = user.username;
+  }
+</script>
+</body>
+</html>

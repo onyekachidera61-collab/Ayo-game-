@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard – 9jaWin Ayo</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="/">🎮 9jaWin</a>
+  <button class="navbar-menu-toggle">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="/lobby.html">Lobby</a></li>
+    <li><a href="/leaderboard.html" class="active">🏆 Leaderboard</a></li>
+    <li><a href="/tournaments.html">Tournaments</a></li>
+    <li><a href="/profile.html">👤 Profile</a></li>
+    <li><a href="#" id="logout-btn" class="btn btn-ghost btn-sm">Logout</a></li>
+  </ul>
+</nav>
+
+<main class="container" style="padding:2rem 1rem;max-width:900px">
+  <h2 style="margin-bottom:0.5rem">🏆 Leaderboard</h2>
+  <p class="text-muted text-sm mb-2">Top Ayo players on 9jaWin</p>
+
+  <!-- Period Tabs -->
+  <div class="lb-tabs" style="max-width:500px">
+    <button class="lb-tab active" onclick="loadLeaderboard('all_time')">All Time</button>
+    <button class="lb-tab" onclick="loadLeaderboard('monthly')">Monthly</button>
+    <button class="lb-tab" onclick="loadLeaderboard('weekly')">Weekly</button>
+    <button class="lb-tab" onclick="loadLeaderboard('daily')">Daily</button>
+  </div>
+
+  <!-- My Rank -->
+  <div class="card mb-2" id="my-rank-card" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <div>
+      <p class="text-muted text-sm">Your Ranking</p>
+      <p class="text-accent" style="font-size:1.5rem;font-weight:900" id="my-rank">—</p>
+    </div>
+    <a href="/profile.html" class="btn btn-ghost btn-sm">View Profile</a>
+  </div>
+
+  <!-- Leaderboard List -->
+  <div class="card">
+    <div id="lb-list"><div class="spinner"></div></div>
+  </div>
+</main>
+
+<script src="/js/api.js"></script>
+<script>
+  requireAuth();
+
+  let currentPeriod = 'all_time';
+
+  async function loadLeaderboard(period) {
+    currentPeriod = period;
+
+    // Update tab UI
+    document.querySelectorAll('.lb-tab').forEach((b, i) => {
+      const periods = ['all_time','monthly','weekly','daily'];
+      b.classList.toggle('active', periods[i] === period);
+    });
+
+    // Load my rank
+    AyoAPI.getMyRank(period).then(res => {
+      if (res.success && res.data.rank) {
+        document.getElementById('my-rank').textContent = '#' + res.data.rank;
+      } else {
+        document.getElementById('my-rank').textContent = 'Unranked';
+      }
+    });
+
+    // Load list
+    const el = document.getElementById('lb-list');
+    el.innerHTML = '<div class="spinner"></div>';
+    const res = await AyoAPI.getLeaderboard(period);
+    if (!res.success) { el.innerHTML = '<p class="text-muted text-center">Failed to load.</p>'; return; }
+
+    if (!res.data.length) {
+      el.innerHTML = '<p class="text-muted text-center p-3">No data for this period.</p>';
+      return;
+    }
+
+    const myUser = AyoAPI.getUser();
+    el.innerHTML = res.data.map((row, idx) => {
+      const rank = row.rank || idx + 1;
+      const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-n';
+      const isMe = row.id === myUser?.id;
+      return `
+        <div class="lb-row ${rank <= 3 ? 'top-3' : ''}${isMe ? ' ' : ''}"
+             style="${isMe ? 'background:rgba(240,165,0,0.1);border-radius:8px' : ''}">
+          <div class="rank-badge ${rankClass}">${rank}</div>
+          <div class="player-avatar">
+            ${row.avatar ? `<img src="${row.avatar}" alt="">` : row.username[0].toUpperCase()}
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:700">${row.display_name || row.username}${isMe ? ' (You)' : ''}</div>
+            <div class="text-muted text-sm">@${row.username}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700">${row.games_won} wins</div>
+            <div class="text-muted text-sm">${row.win_rate || 0}% win rate</div>
+          </div>
+          <div style="text-align:right;min-width:100px">
+            <div class="text-accent" style="font-weight:700">${formatCurrency(row.total_earnings || row.earnings || 0)}</div>
+            <div class="text-muted text-sm">${row.games_played || 0} played</div>
+          </div>
+        </div>
+      `;
+    }).join('<div class="divider" style="margin:0"></div>');
+  }
+
+  document.getElementById('logout-btn').addEventListener('click', async e => {
+    e.preventDefault();
+    await AyoAPI.logout();
+    window.location.href = '/login.html';
+  });
+
+  loadLeaderboard('all_time');
+</script>
+</body>
+</html>

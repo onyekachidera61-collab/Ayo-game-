@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel – 9jaWin Ayo</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body style="display:flex;min-height:100vh;flex-direction:column">
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/">🎮 9jaWin <span>Admin</span></a>
+  <div style="display:flex;align-items:center;gap:1rem">
+    <a href="/lobby.html" class="btn btn-ghost btn-sm">← Game</a>
+    <a href="#" id="logout-btn" class="btn btn-danger btn-sm">Logout</a>
+  </div>
+</nav>
+
+<div style="display:flex;flex:1">
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <p class="text-muted text-sm" style="margin-bottom:0.75rem;padding:0 0.5rem">MANAGEMENT</p>
+    <button class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</button>
+    <button class="nav-item" onclick="showSection('users')">👥 Users</button>
+    <button class="nav-item" onclick="showSection('matches')">🎮 Matches</button>
+    <button class="nav-item" onclick="showSection('transactions')">💳 Transactions</button>
+    <button class="nav-item" onclick="showSection('withdrawals')">💸 Withdrawals</button>
+    <button class="nav-item" onclick="showSection('tournaments')">🏆 Tournaments</button>
+    <button class="nav-item" onclick="showSection('wallet-credit')">💰 Credit Wallet</button>
+  </aside>
+
+  <!-- Main Content -->
+  <div style="flex:1;padding:2rem;overflow-y:auto">
+
+    <!-- Dashboard -->
+    <section id="section-dashboard">
+      <h2 style="margin-bottom:1.5rem">📊 Dashboard</h2>
+      <div id="stats-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem">
+        <div class="spinner"></div>
+      </div>
+    </section>
+
+    <!-- Users -->
+    <section id="section-users" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:1rem">
+        <h2>👥 User Management</h2>
+        <input type="search" id="user-search" class="form-input" style="max-width:280px" placeholder="Search username or email…" oninput="loadUsers()">
+      </div>
+      <div class="card">
+        <div class="table-wrapper">
+          <table id="users-table">
+            <thead>
+              <tr>
+                <th>User</th><th>Email</th><th>Role</th><th>Balance</th>
+                <th>Games</th><th>Joined</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"><tr><td colspan="7" class="text-center"><div class="spinner" style="width:24px;height:24px;margin:1rem auto"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Matches -->
+    <section id="section-matches" class="hidden">
+      <h2 style="margin-bottom:1rem">🎮 Matches</h2>
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Room</th><th>Type</th><th>Status</th><th>Entry Fee</th><th>Prize Pool</th><th>Host</th><th>Started</th></tr></thead>
+            <tbody id="matches-tbody"><tr><td colspan="7" class="text-center"><div class="spinner" style="width:24px;height:24px;margin:1rem auto"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Transactions -->
+    <section id="section-transactions" class="hidden">
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap">
+        <h2>💳 Transactions</h2>
+        <select id="tx-type-filter" class="form-select" style="width:auto" onchange="loadTransactions()">
+          <option value="">All Types</option>
+          <option value="deposit">Deposits</option>
+          <option value="withdrawal">Withdrawals</option>
+          <option value="match_entry">Match Entry</option>
+          <option value="match_reward">Match Rewards</option>
+          <option value="tournament_entry">Tournament Entry</option>
+          <option value="tournament_reward">Tournament Rewards</option>
+        </select>
+        <select id="tx-status-filter" class="form-select" style="width:auto" onchange="loadTransactions()">
+          <option value="">All Status</option>
+          <option value="completed">Completed</option>
+          <option value="pending">Pending</option>
+          <option value="failed">Failed</option>
+          <option value="reversed">Reversed</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Status</th><th>Description</th><th>Date</th></tr></thead>
+            <tbody id="transactions-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Withdrawals -->
+    <section id="section-withdrawals" class="hidden">
+      <h2 style="margin-bottom:1rem">💸 Pending Withdrawals</h2>
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>User</th><th>Amount</th><th>Reference</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody id="withdrawals-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tournaments -->
+    <section id="section-tournaments" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <h2>🏆 Tournament Management</h2>
+        <button class="btn btn-primary btn-sm" onclick="openCreateTournamentModal()">+ Create Tournament</button>
+      </div>
+      <div id="admin-tournament-list"><div class="spinner"></div></div>
+    </section>
+
+    <!-- Wallet Credit -->
+    <section id="section-wallet-credit" class="hidden">
+      <h2 style="margin-bottom:1.5rem">💰 Credit User Wallet</h2>
+      <div class="card" style="max-width:500px">
+        <form id="credit-form">
+          <div class="form-group">
+            <label class="form-label">User ID</label>
+            <input type="number" id="credit-user-id" class="form-input" placeholder="e.g. 5" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Amount (₦)</label>
+            <input type="number" id="credit-amount" class="form-input" min="1" placeholder="e.g. 1000" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Reason</label>
+            <input type="text" id="credit-reason" class="form-input" placeholder="e.g. Bonus credit" maxlength="200">
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg">Credit Wallet</button>
+        </form>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Create Tournament Modal -->
+<div id="create-tournament-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto">
+  <div class="card" style="width:100%;max-width:500px">
+    <h3 style="margin-bottom:1.5rem">Create Tournament</h3>
+    <form id="create-tournament-form">
+      <div class="form-group">
+        <label class="form-label">Tournament Name</label>
+        <input type="text" id="t-name-input" class="form-input" required minlength="3">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <textarea id="t-desc-input" class="form-input" rows="2"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label class="form-label">Entry Fee (₦)</label>
+          <input type="number" id="t-fee-input" class="form-input" min="0" value="0" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Max Players</label>
+          <input type="number" id="t-max-input" class="form-input" min="4" value="16" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Number of Winners</label>
+          <input type="number" id="t-winners-input" class="form-input" min="1" value="3" required>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label class="form-label">Registration Ends</label>
+          <input type="datetime-local" id="t-reg-end-input" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Start Date</label>
+          <input type="datetime-local" id="t-start-input" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Date</label>
+          <input type="datetime-local" id="t-end-input" class="form-input" required>
+        </div>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1rem">
+        <button type="submit" class="btn btn-primary" style="flex:1">Create</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('create-tournament-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  // Admin guard
+  const user = AyoAPI.getUser();
+  if (!user || user.role !== 'admin') {
+    Toast.error('Admin access required.');
+    setTimeout(() => window.location.href = '/login.html', 1000);
+  }
+
+  // ── Section switching ─────────────────────────────────────────
+  function showSection(name) {
+    document.querySelectorAll('section[id^="section-"]').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.admin-sidebar .nav-item').forEach(b => b.classList.remove('active'));
+
+    document.getElementById('section-' + name).classList.remove('hidden');
+    event.target.classList.add('active');
+
+    const loaders = {
+      dashboard:    loadDashboard,
+      users:        loadUsers,
+      matches:      loadMatches,
+      transactions: loadTransactions,
+      withdrawals:  loadWithdrawals,
+      tournaments:  loadAdminTournaments,
+    };
+    if (loaders[name]) loaders[name]();
+  }
+
+  // ── Dashboard ─────────────────────────────────────────────────
+  async function loadDashboard() {
+    const res = await AyoAPI.adminDashboard();
+    if (!res.success) { Toast.error('Failed to load dashboard.'); return; }
+    const d = res.data;
+    document.getElementById('stats-grid').innerHTML = [
+      { label: 'Total Users',       value: d.total_users,        icon: '👥' },
+      { label: 'Active Games',      value: d.active_games,       icon: '🎮' },
+      { label: 'Total Revenue',     value: formatCurrency(d.total_revenue), icon: '💰' },
+      { label: 'Tournaments',       value: d.total_tournaments,  icon: '🏆' },
+      { label: 'Total Balance',     value: formatCurrency(d.total_balance), icon: '💳' },
+      { label: 'Pending Withdrawals', value: d.pending_withdrawals, icon: '💸' },
+    ].map(s => `
+      <div class="stat-card">
+        <div style="font-size:2rem;margin-bottom:0.5rem">${s.icon}</div>
+        <div class="stat-value">${s.value}</div>
+        <div class="stat-label">${s.label}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── Users ─────────────────────────────────────────────────────
+  async function loadUsers() {
+    const search = document.getElementById('user-search')?.value || '';
+    const res = await AyoAPI.adminUsers(1, search);
+    if (!res.success) return;
+    const tbody = document.getElementById('users-tbody');
+    tbody.innerHTML = res.data.users.map(u => `
+      <tr>
+        <td>
+          <div style="font-weight:700">${u.display_name || u.username}</div>
+          <div class="text-muted text-sm">@${u.username} · ID:${u.id}</div>
+        </td>
+        <td>${u.email}</td>
+        <td><span class="badge ${u.role === 'admin' ? 'badge-money' : 'badge-free'}">${u.role}</span></td>
+        <td>${formatCurrency(u.balance || 0)}</td>
+        <td>${u.games_played || 0} played / ${u.games_won || 0} won</td>
+        <td>${formatDate(u.created_at)}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="toggleBan(${u.id}, ${u.is_banned})">
+            ${u.is_banned ? '✅ Unban' : '🚫 Ban'}
+          </button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="7" class="text-center text-muted">No users found.</td></tr>';
+  }
+
+  async function toggleBan(id, isBanned) {
+    const res = await AyoAPI.adminBanUser(id, !isBanned);
+    if (res.success) { Toast.success(res.message); loadUsers(); }
+    else Toast.error(res.message);
+  }
+
+  // ── Matches ───────────────────────────────────────────────────
+  async function loadMatches() {
+    const res = await AyoAPI.adminMatches();
+    if (!res.success) return;
+    document.getElementById('matches-tbody').innerHTML = res.data.map(m => `
+      <tr>
+        <td><code>${m.room_code}</code></td>
+        <td><span class="room-type-badge badge-${m.type}">${m.type}</span></td>
+        <td>${m.status}</td>
+        <td>${m.entry_fee > 0 ? formatCurrency(m.entry_fee) : '—'}</td>
+        <td>${m.prize_pool > 0 ? formatCurrency(m.prize_pool) : '—'}</td>
+        <td>${m.created_by}</td>
+        <td>${m.started_at ? formatDate(m.started_at) : '—'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="7" class="text-center text-muted">No matches.</td></tr>';
+  }
+
+  // ── Transactions ──────────────────────────────────────────────
+  async function loadTransactions() {
+    const type   = document.getElementById('tx-type-filter')?.value || '';
+    const status = document.getElementById('tx-status-filter')?.value || '';
+    const res = await AyoAPI.adminTransactions(type, status);
+    if (!res.success) return;
+    document.getElementById('transactions-tbody').innerHTML = res.data.map(tx => {
+      const isCredit = ['deposit','match_reward','tournament_reward','refund'].includes(tx.type);
+      return `
+        <tr>
+          <td>${tx.username}</td>
+          <td>${tx.type.replace(/_/g,' ')}</td>
+          <td class="text-${isCredit ? 'success' : 'danger'}">${isCredit ? '+' : '-'}${formatCurrency(tx.amount)}</td>
+          <td><span class="badge badge-${tx.status === 'completed' ? 'online' : 'offline'}">${tx.status}</span></td>
+          <td class="text-muted text-sm">${tx.description || '—'}</td>
+          <td>${formatDate(tx.created_at)}</td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="6" class="text-center text-muted">No transactions.</td></tr>';
+  }
+
+  // ── Withdrawals ───────────────────────────────────────────────
+  async function loadWithdrawals() {
+    const res = await AyoAPI.adminTransactions('withdrawal', 'pending');
+    if (!res.success) return;
+    document.getElementById('withdrawals-tbody').innerHTML = res.data.map(tx => `
+      <tr>
+        <td>${tx.username}</td>
+        <td class="text-danger">${formatCurrency(tx.amount)}</td>
+        <td class="text-muted text-sm"><code>${tx.reference || '—'}</code></td>
+        <td>${formatDate(tx.created_at)}</td>
+        <td>
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn btn-success btn-sm" onclick="approveWithdrawal('${tx.uuid}')">✅ Approve</button>
+            <button class="btn btn-danger btn-sm"  onclick="rejectWithdrawal('${tx.uuid}')">❌ Reject</button>
+          </div>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" class="text-center text-muted">No pending withdrawals.</td></tr>';
+  }
+
+  async function approveWithdrawal(uuid) {
+    if (!confirm('Approve this withdrawal?')) return;
+    const res = await AyoAPI.adminApproveWithdrawal(uuid);
+    if (res.success) { Toast.success('Withdrawal approved.'); loadWithdrawals(); }
+    else Toast.error(res.message);
+  }
+
+  async function rejectWithdrawal(uuid) {
+    if (!confirm('Reject this withdrawal? The amount will be refunded.')) return;
+    const res = await AyoAPI.adminRejectWithdrawal(uuid);
+    if (res.success) { Toast.success('Withdrawal rejected and refunded.'); loadWithdrawals(); }
+    else Toast.error(res.message);
+  }
+
+  // ── Tournaments ───────────────────────────────────────────────
+  async function loadAdminTournaments() {
+    const res = await AyoAPI.getTournaments();
+    if (!res.success) return;
+    document.getElementById('admin-tournament-list').innerHTML = res.data.length ? `
+      <div class="table-wrapper card">
+        <table>
+          <thead><tr><th>Name</th><th>Status</th><th>Entry</th><th>Pool</th><th>Players</th><th>Start</th></tr></thead>
+          <tbody>
+            ${res.data.map(t => `
+              <tr>
+                <td>${t.name}</td>
+                <td>${t.status}</td>
+                <td>${t.entry_fee > 0 ? formatCurrency(t.entry_fee) : 'Free'}</td>
+                <td>${formatCurrency(t.prize_pool)}</td>
+                <td>${t.registered_players}/${t.max_players}</td>
+                <td>${formatDate(t.start_date)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : '<p class="text-muted text-center">No tournaments yet.</p>';
+  }
+
+  function openCreateTournamentModal() {
+    const modal = document.getElementById('create-tournament-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  document.getElementById('create-tournament-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await AyoAPI.createTournament({
+      name:             document.getElementById('t-name-input').value,
+      description:      document.getElementById('t-desc-input').value || undefined,
+      entry_fee:        parseFloat(document.getElementById('t-fee-input').value),
+      max_players:      parseInt(document.getElementById('t-max-input').value),
+      num_winners:      parseInt(document.getElementById('t-winners-input').value),
+      registration_end: document.getElementById('t-reg-end-input').value,
+      start_date:       document.getElementById('t-start-input').value,
+      end_date:         document.getElementById('t-end-input').value,
+    });
+    if (res.success) {
+      Toast.success('Tournament created!');
+      closeModal('create-tournament-modal');
+      loadAdminTournaments();
+    } else {
+      const msg = res.message || (res.errors && res.errors[0]?.msg) || 'Failed.';
+      Toast.error(msg);
+    }
+  });
+
+  // ── Wallet Credit ─────────────────────────────────────────────
+  document.getElementById('credit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await AyoAPI.adminCreditWallet({
+      user_id: parseInt(document.getElementById('credit-user-id').value),
+      amount:  parseFloat(document.getElementById('credit-amount').value),
+      reason:  document.getElementById('credit-reason').value || 'Admin credit',
+    });
+    if (res.success) {
+      Toast.success('Wallet credited! New balance: ' + formatCurrency(res.data.balance));
+      document.getElementById('credit-form').reset();
+    } else {
+      Toast.error(res.message || 'Credit failed.');
+    }
+  });
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  }
+
+  document.getElementById('create-tournament-modal').addEventListener('click', e => {
+    if (e.target.id === 'create-tournament-modal') closeModal('create-tournament-modal');
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async e => {
+    e.preventDefault();
+    await AyoAPI.logout();
+    window.location.href = '/login.html';
+  });
+
+  // Load dashboard on start
+  loadDashboard();
+</script>
+</body>
+</html>
