@@ -5,7 +5,12 @@ const db   = require('../config/database');
 const auth = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/adminAuth');
 
+const { apiLimiter } = require('../middleware/rateLimiter');
+
 const router = express.Router();
+
+// Apply standard API rate limiting
+router.use(apiLimiter);
 
 // ── GET /api/tournaments ─────────────────────────────────────────
 router.get('/', auth, async (req, res) => {

@@ -2,7 +2,12 @@ const express = require('express');
 const db   = require('../config/database');
 const auth = require('../middleware/auth');
 
+const { apiLimiter } = require('../middleware/rateLimiter');
+
 const router = express.Router();
+
+// Apply standard API rate limiting
+router.use(apiLimiter);
 
 function getPeriodKey(period) {
   const now = new Date();

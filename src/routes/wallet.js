@@ -4,7 +4,12 @@ const { body, validationResult } = require('express-validator');
 const db   = require('../config/database');
 const auth = require('../middleware/auth');
 
+const { apiLimiter } = require('../middleware/rateLimiter');
+
 const router = express.Router();
+
+// Apply standard API rate limiting
+router.use(apiLimiter);
 
 // ── GET /api/wallet ─────────────────────────────────────────────
 router.get('/', auth, async (req, res) => {

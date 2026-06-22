@@ -3,7 +3,12 @@ const { requireAdmin } = require('../middleware/adminAuth');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../config/database');
 
+const { apiLimiter } = require('../middleware/rateLimiter');
+
 const router = express.Router();
+
+// Apply standard API rate limiting
+router.use(apiLimiter);
 
 // ── GET /api/admin/dashboard ─────────────────────────────────────
 router.get('/dashboard', requireAdmin, async (req, res) => {

@@ -5,8 +5,12 @@ const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
 const db       = require('../config/database');
 const auth     = require('../middleware/auth');
+const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
+
+// Apply strict rate limiting to all auth routes
+router.use(authLimiter);
 
 // ── helpers ────────────────────────────────────────────────────
 function signAccess(user) {

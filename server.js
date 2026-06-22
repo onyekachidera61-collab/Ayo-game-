@@ -8,10 +8,10 @@ const http       = require('http');
 const path       = require('path');
 const cors       = require('cors');
 const helmet     = require('helmet');
-const rateLimit  = require('express-rate-limit');
 const { Server } = require('socket.io');
 
 const { registerSocketHandlers } = require('./src/socket/gameSocket');
+const { apiLimiter }             = require('./src/middleware/rateLimiter');
 
 // ── Routes ────────────────────────────────────────────────────────
 const authRoutes        = require('./src/routes/auth');
@@ -76,24 +76,7 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Rate limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max:      200,
-  standardHeaders: true,
-  legacyHeaders:   false,
-  message: { success: false, message: 'Too many requests. Please try again later.' },
-});
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max:      20,
-  message: { success: false, message: 'Too many auth attempts. Please try again later.' },
-});
-
-app.use('/api/', apiLimiter);
-app.use('/api/auth/', authLimiter);
-
-// Static files
+// Static files (rate-limited in each router; static assets served directly)
 app.use(express.static(path.join(__dirname, 'frontend')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

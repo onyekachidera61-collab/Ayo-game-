@@ -5,7 +5,12 @@ const db         = require('../config/database');
 const auth       = require('../middleware/auth');
 const AyoEngine  = require('../game/AyoEngine');
 
+const { apiLimiter } = require('../middleware/rateLimiter');
+
 const router = express.Router();
+
+// Apply standard API rate limiting
+router.use(apiLimiter);
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
