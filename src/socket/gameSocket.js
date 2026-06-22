@@ -23,8 +23,9 @@ const jwt       = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const db        = require('../config/database');
 const AyoEngine = require('../game/AyoEngine');
+const config   = require('../config/config');
 
-const TURN_TIMER_SECONDS = parseInt(process.env.TURN_TIMER_SECONDS || '30');
+const TURN_TIMER_SECONDS = config.turnTimerSeconds;
 
 // In-memory game timers: matchId -> { timer, secondsLeft }
 const gameTimers = new Map();
@@ -73,7 +74,7 @@ async function distributeMatchReward(matchId, winnerId, isDraw) {
     }
 
     const prizePool  = parseFloat(match.prize_pool);
-    const feePercent = parseFloat(process.env.MONEY_MATCH_FEE_PERCENT || '20') / 100;
+    const feePercent = config.moneyMatchFeePercent;
 
     if (prizePool > 0 && !isDraw) {
       const winnerAmount = prizePool * (1 - feePercent);

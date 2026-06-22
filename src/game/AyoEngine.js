@@ -29,6 +29,13 @@
 
 const ANTI_CW_ORDER = [0, 1, 2, 3, 4, 5, 11, 10, 9, 8, 7, 6];
 
+/** Total number of pits on the board */
+const TOTAL_PITS      = 12;
+/** Pits per player side */
+const PITS_PER_PLAYER = 6;
+/** Seeds per pit at game start */
+const INITIAL_SEEDS   = 4;
+
 class AyoEngine {
   /**
    * Create a fresh game state.
@@ -36,7 +43,7 @@ class AyoEngine {
    */
   static createGame() {
     return {
-      pits: Array(12).fill(4),
+      pits: Array(TOTAL_PITS).fill(INITIAL_SEEDS),
       store: [0, 0],        // [player1_captured, player2_captured]
       currentTurn: 0,       // 0 = player1, 1 = player2
       moveCount: 0,
@@ -142,11 +149,11 @@ class AyoEngine {
     let lastPit = pitIdx;
 
     while (seeds > 0) {
-      pos = (pos + 1) % 12;
+      pos = (pos + 1) % TOTAL_PITS;
       const pit = ANTI_CW_ORDER[pos];
 
-      // Skip origin pit only if we complete a full lap (seeds > 11)
-      if (pit === pitIdx && seeds <= 12) {
+      // Skip origin pit only if we complete a full lap (seeds > TOTAL_PITS - 1)
+      if (pit === pitIdx && seeds <= TOTAL_PITS) {
         // Do not sow back into origin pit on the last lap
         // Actually in standard Ayo: origin pit IS skipped when sowing
         // (you never sow into the pit you picked up from)
@@ -156,7 +163,7 @@ class AyoEngine {
         // seeds remaining equals the lap size that would land on it.
         // Simplification: skip origin pit always if seeds > 0 and
         // we have not yet done a full revolution.
-        if (seeds < 12) {
+        if (seeds < TOTAL_PITS) {
           continue; // skip origin
         }
       }
@@ -177,7 +184,7 @@ class AyoEngine {
         pits[capPit] = 0;
         // Move backwards in anti-clockwise direction (i.e. previous pit)
         const pos = ANTI_CW_ORDER.indexOf(capPit);
-        capPit = ANTI_CW_ORDER[(pos - 1 + 12) % 12];
+        capPit = ANTI_CW_ORDER[(pos - 1 + TOTAL_PITS) % TOTAL_PITS];
       }
     }
 

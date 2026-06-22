@@ -14,10 +14,10 @@ services:
       DB_HOST: db
       DB_PORT: 3306
       DB_USER: 9jawin
-      DB_PASSWORD: ${DB_PASSWORD:-9jawin_secret_change_me}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       DB_NAME: 9jawin_ayo
-      JWT_SECRET: ${JWT_SECRET:-change_this_jwt_secret_minimum_32_chars}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change_this_refresh_secret_min_32_chars}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET must be set in .env}
       JWT_EXPIRES_IN: 1h
       JWT_REFRESH_EXPIRES_IN: 7d
       UPLOAD_PATH: /app/uploads/avatars
@@ -37,17 +37,17 @@ services:
     container_name: 9jawin-ayo-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret_change_me}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD must be set in .env}
       MYSQL_DATABASE: 9jawin_ayo
       MYSQL_USER: 9jawin
-      MYSQL_PASSWORD: ${DB_PASSWORD:-9jawin_secret_change_me}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
     volumes:
       - db-data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     ports:
       - "3306:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "9jawin", "-p${DB_PASSWORD:-9jawin_secret_change_me}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u 9jawin >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10

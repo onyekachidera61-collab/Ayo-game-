@@ -1,3 +1,4 @@
+const config = require('../config/config');
 const express  = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { body, validationResult } = require('express-validator');
@@ -105,7 +106,7 @@ router.post('/:uuid/join', auth, async (req, res) => {
       await conn.execute('UPDATE wallets SET balance=? WHERE user_id=?', [newBalance, req.user.id]);
       await conn.execute(
         'UPDATE tournaments SET prize_pool=prize_pool+? WHERE id=?',
-        [t.entry_fee * (1 - parseFloat(process.env.TOURNAMENT_FEE_PERCENT || '30') / 100), t.id]
+        [t.entry_fee * (1 - config.tournamentFeePercent), t.id]
       );
       await conn.execute(
         `INSERT INTO transactions

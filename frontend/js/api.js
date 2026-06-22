@@ -53,7 +53,7 @@ const AyoAPI = {
       if (refreshRes.ok) {
         const data = await refreshRes.json();
         this.setToken(data.data.accessToken);
-        headers.Authorization = 'Bearer ' + token;
+        headers.Authorization = 'Bearer ' + data.data.accessToken;
         res = await fetch(`${API_BASE}${path}`, { ...options, headers });
       } else {
         this.clearAuth();

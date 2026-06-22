@@ -4,6 +4,7 @@ const { body, validationResult } = require('express-validator');
 const db         = require('../config/database');
 const auth       = require('../middleware/auth');
 const AyoEngine  = require('../game/AyoEngine');
+const config     = require('../config/config');
 
 const { apiLimiter } = require('../middleware/rateLimiter');
 
@@ -91,7 +92,7 @@ router.post('/', auth, [
     }
 
     const matchUuid = uuidv4();
-    const feePercent = parseFloat(process.env.MONEY_MATCH_FEE_PERCENT || '20') / 100;
+    const feePercent = config.moneyMatchFeePercent;
     platformFee = prizePool * feePercent;
 
     const [result] = await conn.execute(
