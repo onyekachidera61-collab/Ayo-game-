@@ -26,10 +26,18 @@ const adminRoutes       = require('./src/routes/admin');
 const app    = express();
 const server = http.createServer(app);
 
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:3000').split(',').map(o => o.trim());
+
 // ── Socket.IO ────────────────────────────────────────────────────
 const io = new Server(server, {
   cors: {
-    origin:      process.env.CLIENT_URL || '*',
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Socket CORS not allowed for: ' + origin));
+      }
+    },
     methods:     ['GET', 'POST'],
     credentials: true,
   },
@@ -54,7 +62,14 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin:      process.env.CLIENT_URL || '*',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (same-origin, server-to-server)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed for origin: ' + origin));
+    }
+  },
   credentials: true,
 }));
 
@@ -100,8 +115,8 @@ app.get('/api/health', (req, res) => {
   res.json({ success: true, status: 'ok', ts: new Date().toISOString() });
 });
 
-// ── SPA fallback ─────────────────────────────────────────────────
-app.get('*', (req, res) => {
+// ── SPA fallback (rate-limited to prevent path traversal abuse) ───
+app.get('*', apiLimiter, (req, res) => {
   res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
