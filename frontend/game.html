@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ayo Game – 9jaWin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="/">🎮 9jaWin</a>
+  <div style="display:flex;align-items:center;gap:1rem">
+    <span id="connection-status" style="font-size:0.8rem;color:var(--text-muted)">● Connecting…</span>
+    <span id="turn-indicator" style="font-size:0.9rem;font-weight:600"></span>
+    <a href="/lobby.html" class="btn btn-ghost btn-sm">← Lobby</a>
+  </div>
+</nav>
+
+<main style="padding:1rem;max-width:900px;margin:0 auto">
+  <!-- Loading state -->
+  <div id="game-loading" style="text-align:center;padding:4rem">
+    <div class="spinner"></div>
+    <p class="text-muted mt-2">Loading game…</p>
+  </div>
+
+  <!-- Game UI (hidden until loaded) -->
+  <div id="game-ui" class="hidden">
+    <!-- Player 2 (opponent on top) -->
+    <div class="player-strip" id="player-strip-1" data-seat="1">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div class="player-avatar" id="avatar-1">?</div>
+        <div>
+          <div class="player-name" id="name-1">Waiting…</div>
+          <div class="player-captured text-sm text-muted">Seeds: 0</div>
+        </div>
+      </div>
+      <div class="turn-timer" id="timer-p2" style="display:none">
+        <div class="timer-bar"><div class="timer-progress" id="timer-progress" style="width:100%"></div></div>
+        <span id="timer-count" style="font-size:0.8rem;min-width:28px">30s</span>
+      </div>
+    </div>
+
+    <!-- Ayo Board -->
+    <div class="ayo-board-wrapper mt-1">
+      <!-- Store + score -->
+      <div class="board-stores" style="width:100%">
+        <div class="store-box">
+          <div class="store-value" id="store-p2">0</div>
+          <div class="store-label">P2 Store</div>
+        </div>
+        <div class="board-divider"></div>
+        <div class="store-box">
+          <div class="store-value" id="store-p1">0</div>
+          <div class="store-label">P1 Store</div>
+        </div>
+      </div>
+
+      <!-- The board itself -->
+      <div class="ayo-board" id="ayo-board">
+        <!-- Player 2 row (pits 6-11, displayed right-to-left = anti-clockwise) -->
+        <div class="board-row top" id="row-top">
+          <div class="pit" id="pit-11" title="Pit 12"></div>
+          <div class="pit" id="pit-10" title="Pit 11"></div>
+          <div class="pit" id="pit-9"  title="Pit 10"></div>
+          <div class="pit" id="pit-8"  title="Pit 9"></div>
+          <div class="pit" id="pit-7"  title="Pit 8"></div>
+          <div class="pit" id="pit-6"  title="Pit 7"></div>
+        </div>
+
+        <!-- Player 1 row (pits 0-5, left to right) -->
+        <div class="board-row" id="row-bottom">
+          <div class="pit" id="pit-0"  title="Pit 1"></div>
+          <div class="pit" id="pit-1"  title="Pit 2"></div>
+          <div class="pit" id="pit-2"  title="Pit 3"></div>
+          <div class="pit" id="pit-3"  title="Pit 4"></div>
+          <div class="pit" id="pit-4"  title="Pit 5"></div>
+          <div class="pit" id="pit-5"  title="Pit 6"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Player 1 (you on bottom) -->
+    <div class="player-strip mt-1" id="player-strip-0" data-seat="0">
+      <div style="display:flex;align-items:center;gap:0.75rem">
+        <div class="player-avatar" id="avatar-0">?</div>
+        <div>
+          <div class="player-name" id="name-0">You</div>
+          <div class="player-captured text-sm text-muted">Seeds: 0</div>
+        </div>
+      </div>
+      <div class="turn-timer" id="timer-p1">
+        <div class="timer-bar"><div class="timer-progress" id="timer-progress-p1" style="width:100%"></div></div>
+        <span id="timer-count-p1" style="font-size:0.8rem;min-width:28px">30s</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;flex-wrap:wrap;gap:1rem">
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-danger btn-sm" onclick="gameClient.resign()">🏳 Resign</button>
+        <button class="btn btn-ghost btn-sm" id="toggle-view-btn" onclick="toggleView()">👁 Show Seeds</button>
+      </div>
+      <div class="text-muted text-sm">
+        Move #<span id="move-count">0</span> &nbsp;|&nbsp;
+        Room: <code id="room-code-display"></code>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="mt-2">
+      <h4 style="margin-bottom:0.5rem;font-size:0.9rem;color:var(--text-muted)">💬 Chat</h4>
+      <div class="chat-panel">
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input-row">
+          <input type="text" class="chat-input" id="chat-input"
+                 placeholder="Type a message… (Enter to send)"
+                 maxlength="200"
+                 onkeydown="if(event.key==='Enter'){sendChat();event.preventDefault()}">
+          <button class="btn btn-primary btn-sm" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/game.js"></script>
+<script>
+  requireAuth();
+
+  const params = new URLSearchParams(location.search);
+  const matchUuid = params.get('match');
+  if (!matchUuid) { Toast.error('No match specified.'); location.href = '/lobby.html'; }
+
+  let showSeeds = false;
+
+  // Initialize game client
+  gameClient.init(matchUuid);
+
+  // Patch onGameState to show UI
+  const origOnGameState = gameClient.onGameState.bind(gameClient);
+  gameClient.onGameState = function(data) {
+    origOnGameState(data);
+    document.getElementById('game-loading').classList.add('hidden');
+    document.getElementById('game-ui').classList.remove('hidden');
+
+    // Set room code
+    if (data.match) {
+      document.getElementById('room-code-display').textContent = data.match.room_code || '';
+    }
+
+    // Update move count
+    if (data.state) {
+      document.getElementById('move-count').textContent = data.state.moveCount || 0;
+    }
+
+    // Orient board based on player seat
+    if (data.yourSeat === 1) {
+      // Flip board for player 2
+      document.getElementById('row-top').style.direction = 'ltr';
+      document.getElementById('row-bottom').style.direction = 'rtl';
+    }
+
+    // Player names
+    data.players.forEach(p => {
+      const nameEl = document.getElementById('name-' + p.seat);
+      if (nameEl) {
+        const isYou = p.id === AyoAPI.getUser()?.id;
+        nameEl.textContent = (p.display_name || p.username) + (isYou ? ' (You)' : '');
+      }
+    });
+  };
+
+  // Patch onMove to update move counter
+  const origOnMove = gameClient.onMove.bind(gameClient);
+  gameClient.onMove = function(data) {
+    origOnMove(data);
+    if (data.state) {
+      document.getElementById('move-count').textContent = data.state.moveCount || 0;
+    }
+  };
+
+  function sendChat() {
+    const input = document.getElementById('chat-input');
+    gameClient.sendChat(input.value);
+    input.value = '';
+  }
+
+  function toggleView() {
+    showSeeds = !showSeeds;
+    document.getElementById('toggle-view-btn').textContent = showSeeds ? '👁 Show Count' : '👁 Show Seeds';
+    document.querySelectorAll('.pit').forEach(el => {
+      el.classList.toggle('display-seeds', showSeeds);
+      el.classList.toggle('display-count', !showSeeds);
+    });
+  }
+</script>
+</body>
+</html>

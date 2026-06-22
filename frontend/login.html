@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login – 9jaWin Ayo</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>🎮 9jaWin</h1>
+      <p>Sign in to play Ayo Olopon</p>
+    </div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com" required autocomplete="email">
+        <div class="form-error hidden" id="email-error"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+        <div class="form-error hidden" id="pass-error"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg mt-2" id="login-btn">
+        Sign In
+      </button>
+
+      <div class="divider"></div>
+      <p class="text-center text-sm text-muted">
+        Don't have an account?
+        <a href="/register.html">Create one free</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  if (AyoAPI.getToken()) window.location.href = '/lobby.html';
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('login-btn');
+    btn.disabled = true;
+    btn.textContent = 'Signing in...';
+
+    const email    = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    try {
+      const res = await AyoAPI.login({ email, password });
+      if (res.success) {
+        AyoAPI.setToken(res.data.accessToken);
+        AyoAPI.setRefreshToken(res.data.refreshToken);
+        AyoAPI.setUser(res.data.user);
+        Toast.success('Welcome back, ' + res.data.user.username + '!');
+        setTimeout(() => window.location.href = '/lobby.html', 500);
+      } else {
+        Toast.error(res.message || 'Login failed.');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    } catch (err) {
+      Toast.error('Network error. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Sign In';
+    }
+  });
+</script>
+</body>
+</html>

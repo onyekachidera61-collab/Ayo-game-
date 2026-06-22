@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tournaments – 9jaWin Ayo</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <a class="navbar-brand" href="/">🎮 9jaWin</a>
+  <button class="navbar-menu-toggle">☰</button>
+  <ul class="navbar-nav">
+    <li><a href="/lobby.html">Lobby</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+    <li><a href="/tournaments.html" class="active">🏆 Tournaments</a></li>
+    <li><a href="/wallet.html">💰 Wallet</a></li>
+    <li><a href="/profile.html">👤 Profile</a></li>
+    <li><a href="#" id="logout-btn" class="btn btn-ghost btn-sm">Logout</a></li>
+  </ul>
+</nav>
+
+<main class="container" style="padding:2rem 1rem;max-width:1000px">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
+    <div>
+      <h2>🏆 Tournaments</h2>
+      <p class="text-muted text-sm">Compete for big prizes in official tournaments</p>
+    </div>
+  </div>
+
+  <div id="tournament-list">
+    <div class="spinner"></div>
+  </div>
+</main>
+
+<!-- Tournament Detail Modal -->
+<div id="tournament-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;overflow-y:auto">
+  <div class="card" style="width:100%;max-width:500px;position:relative">
+    <button onclick="closeModal('tournament-modal')" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer">✕</button>
+    <h3 id="t-name" style="margin-bottom:0.5rem;padding-right:2rem"></h3>
+    <p id="t-desc" class="text-muted text-sm mb-2"></p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+      <div class="stat-card">
+        <div class="stat-value text-accent" id="t-fee">₦0</div>
+        <div class="stat-label">Entry Fee</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value text-success" id="t-pool">₦0</div>
+        <div class="stat-label">Prize Pool</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="t-players">0/0</div>
+        <div class="stat-label">Players</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="t-winners">0</div>
+        <div class="stat-label">Winners</div>
+      </div>
+    </div>
+    <div class="mb-2 text-sm text-muted">
+      <div>📅 Start: <span id="t-start"></span></div>
+      <div>⏰ Registration ends: <span id="t-reg-end"></span></div>
+    </div>
+    <button id="t-join-btn" class="btn btn-primary btn-block btn-lg" onclick="joinTournament()">
+      Join Tournament
+    </button>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  requireAuth();
+
+  let selectedTournament = null;
+
+  const statusColors = {
+    upcoming:     'var(--text-muted)',
+    registration: 'var(--success)',
+    active:       'var(--accent)',
+    completed:    'var(--text-muted)',
+    cancelled:    'var(--danger)',
+  };
+
+  async function loadTournaments() {
+    const el = document.getElementById('tournament-list');
+    el.innerHTML = '<div class="spinner"></div>';
+    const res = await AyoAPI.getTournaments();
+    if (!res.success) { el.innerHTML = '<p class="text-muted text-center">Failed to load tournaments.</p>'; return; }
+
+    if (!res.data.length) {
+      el.innerHTML = '<p class="text-muted text-center p-3">No tournaments available. Check back soon!</p>';
+      return;
+    }
+
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem">
+        ${res.data.map(t => `
+          <div class="card" style="cursor:pointer" onclick="openTournament('${t.uuid}')">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem">
+              <h3 style="font-size:1.05rem;flex:1">${t.name}</h3>
+              <span class="badge" style="background:rgba(0,0,0,0.3);color:${statusColors[t.status] || '#aaa'};flex-shrink:0;margin-left:0.5rem">
+                ${t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+              </span>
+            </div>
+            ${t.description ? `<p class="text-muted text-sm mb-2">${t.description}</p>` : ''}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
+              <div>
+                <div class="text-muted text-sm">Entry Fee</div>
+                <div class="text-accent" style="font-weight:700">${t.entry_fee > 0 ? formatCurrency(t.entry_fee) : 'Free'}</div>
+              </div>
+              <div>
+                <div class="text-muted text-sm">Prize Pool</div>
+                <div class="text-success" style="font-weight:700">${formatCurrency(t.prize_pool)}</div>
+              </div>
+              <div>
+                <div class="text-muted text-sm">Players</div>
+                <div style="font-weight:700">${t.registered_players}/${t.max_players}</div>
+              </div>
+              <div>
+                <div class="text-muted text-sm">Winners</div>
+                <div style="font-weight:700">${t.num_winners}</div>
+              </div>
+            </div>
+            <div class="text-sm text-muted">Starts ${formatDate(t.start_date)}</div>
+            ${t.status === 'registration' ? '<button class="btn btn-primary btn-sm btn-block mt-2">Join Now</button>' : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  async function openTournament(uuid) {
+    const res = await AyoAPI.getTournament(uuid);
+    if (!res.success) { Toast.error('Failed to load tournament.'); return; }
+
+    const t = res.data;
+    selectedTournament = t;
+
+    document.getElementById('t-name').textContent    = t.name;
+    document.getElementById('t-desc').textContent    = t.description || '';
+    document.getElementById('t-fee').textContent     = t.entry_fee > 0 ? formatCurrency(t.entry_fee) : 'Free';
+    document.getElementById('t-pool').textContent    = formatCurrency(t.prize_pool);
+    document.getElementById('t-players').textContent = `${t.registered_players}/${t.max_players}`;
+    document.getElementById('t-winners').textContent = t.num_winners;
+    document.getElementById('t-start').textContent   = formatDate(t.start_date);
+    document.getElementById('t-reg-end').textContent = formatDate(t.registration_end);
+
+    const joinBtn = document.getElementById('t-join-btn');
+    if (t.status !== 'registration') {
+      joinBtn.disabled = true;
+      joinBtn.textContent = t.status === 'completed' ? 'Completed' : 'Registration Closed';
+    } else {
+      joinBtn.disabled = false;
+      joinBtn.textContent = 'Join Tournament' + (t.entry_fee > 0 ? ` – ${formatCurrency(t.entry_fee)}` : ' – Free');
+    }
+
+    const modal = document.getElementById('tournament-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  async function joinTournament() {
+    if (!selectedTournament) return;
+    const btn = document.getElementById('t-join-btn');
+    btn.disabled = true;
+    btn.textContent = 'Joining…';
+
+    const res = await AyoAPI.joinTournament(selectedTournament.uuid);
+    if (res.success) {
+      Toast.success('Joined tournament!');
+      closeModal('tournament-modal');
+      loadTournaments();
+    } else {
+      Toast.error(res.message || 'Could not join tournament.');
+      btn.disabled = false;
+      btn.textContent = 'Join Tournament';
+    }
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  }
+
+  document.getElementById('tournament-modal').addEventListener('click', e => {
+    if (e.target.id === 'tournament-modal') closeModal('tournament-modal');
+  });
+
+  document.getElementById('logout-btn').addEventListener('click', async e => {
+    e.preventDefault();
+    await AyoAPI.logout();
+    window.location.href = '/login.html';
+  });
+
+  loadTournaments();
+</script>
+</body>
+</html>

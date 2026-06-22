@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Lobby – 9jaWin Ayo</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="navbar-brand" href="/">🎮 9jaWin <span>Ayo</span></a>
+  <button class="navbar-menu-toggle">☰</button>
+  <ul class="navbar-nav" id="main-nav">
+    <li><a href="/lobby.html" class="active">Lobby</a></li>
+    <li><a href="/leaderboard.html">Leaderboard</a></li>
+    <li><a href="/tournaments.html">Tournaments</a></li>
+    <li><a href="/wallet.html">💰 Wallet</a></li>
+    <li><a href="/profile.html">👤 <span id="nav-username"></span></a></li>
+    <li><a href="#" id="logout-btn" class="btn btn-ghost btn-sm">Logout</a></li>
+  </ul>
+</nav>
+
+<main class="container" style="padding:2rem 1rem">
+  <!-- Balance bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
+    <div>
+      <h2>Game Lobby</h2>
+      <p class="text-muted text-sm">Find a match or create your own room</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <span class="text-muted text-sm">Balance:</span>
+      <span class="text-accent" style="font-weight:900;font-size:1.1rem" id="wallet-balance">₦0.00</span>
+      <a href="/wallet.html" class="btn btn-ghost btn-sm">Top Up</a>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem">
+    <button class="btn btn-primary btn-lg" onclick="openCreateModal('free')">
+      ➕ Free Match
+    </button>
+    <button class="btn btn-primary btn-lg" style="background:var(--warning);color:#000" onclick="openCreateModal('money')">
+      💰 Money Match
+    </button>
+    <button class="btn btn-ghost btn-lg" onclick="openJoinModal()">
+      🔑 Join by Code
+    </button>
+    <a href="/tournaments.html" class="btn btn-outline btn-lg">
+      🏆 Tournaments
+    </a>
+  </div>
+
+  <!-- Lobby Tabs -->
+  <div class="lb-tabs" style="max-width:400px;margin-bottom:1.5rem">
+    <button class="lb-tab active" onclick="switchTab('public')">Public Rooms</button>
+    <button class="lb-tab" onclick="switchTab('friends')">Friends</button>
+    <button class="lb-tab" onclick="switchTab('history')">History</button>
+  </div>
+
+  <!-- Public Rooms -->
+  <div id="tab-public">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3>Available Rooms</h3>
+      <button class="btn btn-ghost btn-sm" onclick="loadLobby()">🔄 Refresh</button>
+    </div>
+    <div id="rooms-list">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Friends -->
+  <div id="tab-friends" class="hidden">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
+      <h3>Friends</h3>
+      <button class="btn btn-primary btn-sm" onclick="openAddFriendModal()">+ Add Friend</button>
+    </div>
+    <div id="friends-list">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Match History -->
+  <div id="tab-history" class="hidden">
+    <h3 style="margin-bottom:1rem">Recent Matches</h3>
+    <div id="history-list">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ── Modals ────────────────────────────────────────────────── -->
+
+<!-- Create Match Modal -->
+<div id="create-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:100%;max-width:420px">
+    <h3 id="create-modal-title" style="margin-bottom:1.5rem">Create Match</h3>
+    <form id="create-form">
+      <div class="form-group">
+        <label class="form-label">Match Type</label>
+        <select id="create-type" class="form-select">
+          <option value="free">Free Match</option>
+          <option value="money">Money Match</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Visibility</label>
+        <select id="create-visibility" class="form-select">
+          <option value="public">Public</option>
+          <option value="private">Private (Code Only)</option>
+        </select>
+      </div>
+      <div class="form-group" id="entry-fee-group" style="display:none">
+        <label class="form-label">Entry Fee (₦)</label>
+        <input type="number" id="create-entry-fee" class="form-input" min="100" step="50" value="500" placeholder="500">
+        <p class="text-sm text-muted mt-1">Winner gets 80%. Platform fee: 20%</p>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1.5rem">
+        <button type="submit" class="btn btn-primary" style="flex:1">Create Room</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('create-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Join Modal -->
+<div id="join-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:100%;max-width:380px">
+    <h3 style="margin-bottom:1.5rem">Join by Room Code</h3>
+    <form id="join-form">
+      <div class="form-group">
+        <label class="form-label">Room Code</label>
+        <input type="text" id="join-code" class="form-input" placeholder="e.g. ABC123" maxlength="10"
+               style="text-transform:uppercase;font-size:1.5rem;letter-spacing:0.2em;text-align:center" required>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1.5rem">
+        <button type="submit" class="btn btn-primary" style="flex:1">Join Room</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('join-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Friend Modal -->
+<div id="friend-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:100%;max-width:380px">
+    <h3 style="margin-bottom:1.5rem">Add Friend</h3>
+    <div class="form-group">
+      <label class="form-label">Search by Username</label>
+      <input type="text" id="friend-search" class="form-input" placeholder="Username..." oninput="searchFriends(this.value)">
+    </div>
+    <div id="friend-search-results" style="max-height:200px;overflow-y:auto"></div>
+    <button class="btn btn-ghost btn-block mt-2" onclick="closeModal('friend-modal')">Close</button>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  requireAuth();
+
+  // Load user info
+  const user = AyoAPI.getUser();
+  if (user) document.getElementById('nav-username').textContent = user.username;
+
+  // Load wallet balance
+  AyoAPI.getWallet().then(res => {
+    if (res.success) {
+      document.getElementById('wallet-balance').textContent = formatCurrency(res.data.balance);
+    }
+  });
+
+  // ── Tab switching ─────────────────────────────────────────────
+  function switchTab(tab) {
+    ['public', 'friends', 'history'].forEach(t => {
+      document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+    });
+    document.querySelectorAll('.lb-tab').forEach((b, i) => {
+      b.classList.toggle('active', ['public','friends','history'][i] === tab);
+    });
+    if (tab === 'public')  loadLobby();
+    if (tab === 'friends') loadFriends();
+    if (tab === 'history') loadHistory();
+  }
+
+  // ── Load Lobby ────────────────────────────────────────────────
+  async function loadLobby() {
+    const el = document.getElementById('rooms-list');
+    el.innerHTML = '<div class="spinner"></div>';
+    const res = await AyoAPI.getLobby();
+    if (!res.success) { el.innerHTML = '<p class="text-muted text-center">Failed to load rooms.</p>'; return; }
+
+    if (!res.data.length) {
+      el.innerHTML = '<p class="text-muted text-center p-3">No open rooms. Create one!</p>';
+      return;
+    }
+    el.innerHTML = res.data.map(room => `
+      <div class="room-card mb-2" style="margin-bottom:0.75rem">
+        <div>
+          <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem">
+            <code style="background:var(--bg-secondary);padding:0.2rem 0.5rem;border-radius:4px;font-size:1rem;letter-spacing:0.1em">${room.room_code}</code>
+            <span class="room-type-badge badge-${room.type}">${room.type}</span>
+          </div>
+          <div class="text-muted text-sm">Host: ${room.created_by} · ${room.player_count}/2 players</div>
+          ${room.entry_fee > 0 ? `<div class="text-accent text-sm">Entry: ${formatCurrency(room.entry_fee)}</div>` : ''}
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="joinRoom('${room.room_code}')">Join</button>
+      </div>
+    `).join('');
+  }
+
+  // ── Create Modal ──────────────────────────────────────────────
+  function openCreateModal(type = 'free') {
+    const modal = document.getElementById('create-modal');
+    document.getElementById('create-type').value = type;
+    document.getElementById('entry-fee-group').style.display = type === 'money' ? 'block' : 'none';
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  document.getElementById('create-type').addEventListener('change', (e) => {
+    document.getElementById('entry-fee-group').style.display = e.target.value === 'money' ? 'block' : 'none';
+  });
+
+  document.getElementById('create-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const type       = document.getElementById('create-type').value;
+    const visibility = document.getElementById('create-visibility').value;
+    const entry_fee  = type === 'money' ? parseFloat(document.getElementById('create-entry-fee').value) : 0;
+
+    const res = await AyoAPI.createMatch({ type, visibility, entry_fee });
+    if (res.success) {
+      Toast.success('Room created: ' + res.data.room_code);
+      closeModal('create-modal');
+      // Navigate to game page
+      window.location.href = '/game.html?match=' + res.data.uuid;
+    } else {
+      Toast.error(res.message || 'Failed to create room.');
+    }
+  });
+
+  // ── Join ──────────────────────────────────────────────────────
+  function openJoinModal() {
+    const modal = document.getElementById('join-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('join-code').focus(), 100);
+  }
+
+  document.getElementById('join-code').addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase();
+  });
+
+  document.getElementById('join-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const room_code = document.getElementById('join-code').value.toUpperCase();
+    const res = await AyoAPI.joinMatch({ room_code });
+    if (res.success) {
+      window.location.href = '/game.html?match=' + res.data.uuid;
+    } else {
+      Toast.error(res.message || 'Could not join room.');
+    }
+  });
+
+  async function joinRoom(code) {
+    const res = await AyoAPI.joinMatch({ room_code: code });
+    if (res.success) {
+      window.location.href = '/game.html?match=' + res.data.uuid;
+    } else {
+      Toast.error(res.message || 'Could not join room.');
+    }
+  }
+
+  // ── Friends ───────────────────────────────────────────────────
+  async function loadFriends() {
+    const el = document.getElementById('friends-list');
+    el.innerHTML = '<div class="spinner"></div>';
+    const res = await AyoAPI.getFriends();
+    if (!res.success) { el.innerHTML = '<p class="text-muted">Failed to load friends.</p>'; return; }
+
+    const accepted = res.data.filter(f => f.status === 'accepted');
+    const pending  = res.data.filter(f => f.status === 'pending' && !f.is_sender);
+
+    if (!res.data.length) {
+      el.innerHTML = '<p class="text-muted text-center p-3">No friends yet. Add some!</p>';
+      return;
+    }
+
+    const html = [
+      pending.length ? `<h4 class="text-muted text-sm mb-1">Pending Requests</h4>` : '',
+      ...pending.map(f => `
+        <div class="room-card mb-1" style="margin-bottom:0.5rem">
+          <div style="display:flex;align-items:center;gap:0.75rem">
+            <div class="player-avatar">${f.username[0].toUpperCase()}</div>
+            <div><div class="player-name">${f.username}</div></div>
+          </div>
+          <button class="btn btn-success btn-sm" onclick="acceptFriend(${f.friend_id})">Accept</button>
+        </div>
+      `),
+      accepted.length ? `<h4 class="text-muted text-sm mb-1 mt-2">Friends</h4>` : '',
+      ...accepted.map(f => `
+        <div class="room-card mb-1" style="margin-bottom:0.5rem">
+          <div style="display:flex;align-items:center;gap:0.75rem">
+            <div class="player-avatar">${f.username[0].toUpperCase()}</div>
+            <div>
+              <div class="player-name">${f.display_name || f.username}</div>
+              <div class="text-sm"><span class="badge badge-${f.is_online ? 'online' : 'offline'}">${f.is_online ? '● Online' : '○ Offline'}</span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn btn-ghost btn-sm" onclick="removeFriend(${f.friend_id})">Remove</button>
+          </div>
+        </div>
+      `),
+    ].join('');
+    el.innerHTML = html || '<p class="text-muted text-center">No friends yet.</p>';
+  }
+
+  async function acceptFriend(userId) {
+    const res = await AyoAPI.acceptFriend(userId);
+    if (res.success) { Toast.success('Friend added!'); loadFriends(); }
+    else Toast.error(res.message);
+  }
+
+  async function removeFriend(friendId) {
+    if (!confirm('Remove this friend?')) return;
+    const res = await AyoAPI.removeFriend(friendId);
+    if (res.success) { Toast.success('Friend removed.'); loadFriends(); }
+    else Toast.error(res.message);
+  }
+
+  function openAddFriendModal() {
+    const modal = document.getElementById('friend-modal');
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  }
+
+  let searchTimeout;
+  async function searchFriends(q) {
+    clearTimeout(searchTimeout);
+    const results = document.getElementById('friend-search-results');
+    if (!q) { results.innerHTML = ''; return; }
+    searchTimeout = setTimeout(async () => {
+      const res = await AyoAPI.searchUsers(q);
+      if (!res.success) return;
+      results.innerHTML = res.data.map(u => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <div class="player-avatar" style="width:28px;height:28px;font-size:0.8rem">${u.username[0].toUpperCase()}</div>
+            <span>${u.username}</span>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addFriend('${u.username}', this)">+ Add</button>
+        </div>
+      `).join('') || '<p class="text-muted text-sm text-center p-2">No users found</p>';
+    }, 300);
+  }
+
+  async function addFriend(username, btn) {
+    btn.disabled = true;
+    const res = await AyoAPI.sendFriendRequest(username);
+    if (res.success) { Toast.success('Friend request sent!'); btn.textContent = 'Sent ✓'; }
+    else { Toast.error(res.message); btn.disabled = false; }
+  }
+
+  // ── History ───────────────────────────────────────────────────
+  async function loadHistory() {
+    const el = document.getElementById('history-list');
+    el.innerHTML = '<div class="spinner"></div>';
+    const u = AyoAPI.getUser();
+    const res = await AyoAPI.getUserHistory(u.id);
+    if (!res.success) { el.innerHTML = '<p class="text-muted">Failed to load history.</p>'; return; }
+
+    if (!res.data.length) {
+      el.innerHTML = '<p class="text-muted text-center p-3">No matches played yet.</p>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>Opponent</th><th>Type</th><th>Result</th><th>Entry Fee</th><th>Date</th></tr></thead>
+          <tbody>
+            ${res.data.map(m => `
+              <tr>
+                <td>${m.opponent_username}</td>
+                <td><span class="room-type-badge badge-${m.type}">${m.type}</span></td>
+                <td class="text-${m.result === 'win' ? 'success' : m.result === 'draw' ? 'warning' : 'danger'}">
+                  ${m.result === 'win' ? '🏆 Win' : m.result === 'draw' ? '🤝 Draw' : '😔 Loss'}
+                </td>
+                <td>${m.entry_fee > 0 ? formatCurrency(m.entry_fee) : '—'}</td>
+                <td>${formatDate(m.completed_at)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // ── Modals ────────────────────────────────────────────────────
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    el.classList.add('hidden');
+    el.style.display = 'none';
+  }
+
+  // Close on backdrop click
+  ['create-modal','join-modal','friend-modal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', (e) => {
+      if (e.target.id === id) closeModal(id);
+    });
+  });
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', async (e) => {
+    e.preventDefault();
+    await AyoAPI.logout();
+    window.location.href = '/login.html';
+  });
+
+  // Initial load
+  loadLobby();
+
+  // Auto-refresh lobby every 10s
+  setInterval(loadLobby, 10000);
+</script>
+</body>
+</html>
